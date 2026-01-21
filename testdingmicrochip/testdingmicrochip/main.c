@@ -22,6 +22,7 @@
 #define LCD_EN 0x04
 #define LCD_BL 0x08
 
+char togel = '0';
 
 void init_gpio()
 {
@@ -29,7 +30,7 @@ void init_gpio()
 	DDRC &= ~(1<<DDRC1); //potentiemeter als sensor op pc1
 	DDRD |= (1<<DDRD5) | (1<<DDRD6);// licht op D5 is blauw en D6 rood
 	DDRD &= ~(1<<DDRD2); // input
-	PORTD |= (1<<PORTD2); // pull-u
+	PORTD |= (1 << PORTD2);
 	PORTC &= ~((1 << PORTC0) | (1 << PORTC1));
 	
 }
@@ -74,58 +75,58 @@ uint8_t dht_read_byte(void)
 {
     uint8_t result = 0;
     for (uint8_t i = 0; i < 8; i++) {
-        while (!(PIND & (1 << PD2))); // wacht tot hoog
-        _delay_us(30);
+        // wacht tot lijn hoog (start van bit)
+        uint16_t count = 0;
+        while (!(PIND & (1 << PD2))) {
+            if (++count > 10000) return 0xFF; // fout
+        }
+
+        _delay_us(40); // midden van bit
+
+        // lees bit
         if (PIND & (1 << PD2)) result |= (1 << (7 - i));
-        while (PIND & (1 << PD2)); // wacht tot laag
+
+        // wacht tot lijn laag (einde bit)
+        count = 0;
+        while ((PIND & (1 << PD2))) {
+            if (++count > 10000) return 0xFF; // fout
+        }
     }
     return result;
 }
 
 int8_t read_dht11_temperature(void)
 {
-    // Startsignaal: lijn laag voor minstens 18 ms
-    DDRD |= (1 << DDRD2);      // output
-    PORTD &= ~(1 << PORTD2);    // low
+    // Startsignaal
+    DDRD |= (1 << PD2);
+    PORTD &= ~(1 << PD2);   // lijn laag >18ms
     _delay_ms(20);
-    PORTD |= (1 << PORTD2);     // high
-    _delay_us(30);
-    DDRD &= ~(1 << DDRD2);     // input (sensor mag nu antwoorden)
 
-    // Wacht op sensor: eerst ~80 us low
+    PORTD |= (1 << PD2);    // lijn hoog
+    _delay_us(40);           // korte wacht
+    DDRD &= ~(1 << PD2);    // lijn als input
+
+    // Wacht op respons van sensor (~80us laag + ~80us hoog)
     uint16_t timeout = 0;
-    while ((PIND & (1 << PIND2))) {   // wacht tot laag
-        if (++timeout > 10000) return -1;
-    }
-
+    while ((PIND & (1 << PIND2))) if (++timeout > 10000) return  -1;
     timeout = 0;
-    while (!(PIND & (1 << PIND2))) {  // wacht tot hoog
-        if (++timeout > 10000) return -2;
-    }
-
-    // Nog een low/high sync van de sensor
+    while (!(PIND & (1 << PD2))) if (++timeout > 10000) return -2;
     timeout = 0;
-    while ((PIND & (1 << PIND2))) {   // wacht tot laag
-        if (++timeout > 10000) return -3;
-    }
+    while ((PIND & (1 << PD2))) if (++timeout > 10000) return -3;
 
-    timeout = 0;
-    while (!(PIND & (1 << PIND2))) {  // wacht tot hoog
-        if (++timeout > 10000) return -4;
-    }
+    // 5 bytes uitlezen
+    uint8_t hum_int  = dht_read_byte();
+    uint8_t hum_dec  = dht_read_byte();
+    uint8_t temp_int = dht_read_byte();
+    uint8_t temp_dec = dht_read_byte();
+    uint8_t checksum = dht_read_byte();
 
-    // Nu komen de 40 bits
-    uint8_t hum_int    = dht_read_byte();
-    uint8_t hum_dec    = dht_read_byte();
-    uint8_t temp_int   = dht_read_byte();
-    uint8_t temp_dec   = dht_read_byte();
-    uint8_t checksum   = dht_read_byte();
-
-    uint8_t sum = hum_int + hum_dec + temp_int + temp_dec;
-    if (sum != checksum) return -5;
+    // Controleer checksum
+    if ((hum_int + hum_dec + temp_int + temp_dec) != checksum) return -5;
 
     return temp_int;
 }
+
 
 
 
@@ -252,15 +253,47 @@ int main(void)
 	
 	while (1)
 	{
-		int8_t tempC = read_dht11_temperature();
-		char buf[8];
-
 		lcd_command(0x80);
-		lcd_print("TEMP: ");
-		itoa(tempC, buf, 10);
-		lcd_print(buf);
-		lcd_print("C ");
+		//int8_t tempC = read_dht11_temperature();
+		//char buf[8];
 
+		//lcd_command(0x80);
+		//lcd_print("TEMP: ");
+		//itoa(tempC, buf, 10);
+		//lcd_print(buf);
+		//lcd_print("C ");
+		 if (togel == '1') {
+            int8_t tempC = read_dht11_temperature();
+			char buf[8];
+			lcd_print("TEMP: ");
+			itoa(tempC, buf, 10);
+			lcd_print(buf);
+			lcd_print("C ");
+			UART_send_number(tempC);
+        } else {
+            // Analoge sensor uitlezen en omzetten naar °C
+			char buf[8];
+            uint16_t adc = ADC_read(0);
+            float Vref = 5.0;
+            float R_pullup = 10000.0;
+            float Vadc = adc * Vref / 1023.0;
+            float R_thermistor = R_pullup * (Vref / Vadc - 1);
+
+            // Beta formule NTC
+            float B = 3950.0;
+            float R0 = 10000.0;
+            float T0 = 25.0 + 273.15; // Kelvin
+            float tempK = 1.0 / (1.0/T0 + (1.0/B) * log(R_thermistor / R0));
+            float tempC = tempK - 273.15;
+
+            lcd_print("TEMP: ");
+            itoa((int)tempC, buf, 10);
+            lcd_print(buf);
+            lcd_print("C ");
+			
+			UART_send_number(tempC);
+			
+        }
 
 
 		OCR0A = ADC_read(0) >> 2;
@@ -270,4 +303,3 @@ int main(void)
 	}
 
 }
-
