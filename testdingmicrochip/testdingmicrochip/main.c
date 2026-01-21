@@ -10,6 +10,8 @@
 #include <util/delay.h>
 #include <util/twi.h>
 #include <stdlib.h>
+#include <math.h>
+
 
 #define START           0x08
 #define MT_SLA_ACK      0x18
@@ -20,15 +22,14 @@
 #define LCD_EN 0x04
 #define LCD_BL 0x08
 
-#define CS_PIN PD7
-
 
 void init_gpio()
 {
-	DDRC &= ~(1<<DDRC0); //potentie meter voor tempratuur te zetten
-	DDRC &= ~(1<<DDRC1); //potentiemeter als sensor
+	DDRC &= ~(1<<DDRC0); //potentie meter voor tempratuur te zetten op pc0
+	DDRC &= ~(1<<DDRC1); //potentiemeter als sensor op pc1
 	DDRD |= (1<<DDRD5) | (1<<DDRD6);// licht op D5 is blauw en D6 rood
-	DDRD &= ~(1<<DDRD2); //knop
+	DDRD &= ~(1<<DDRD2); // input
+	PORTD |= (1<<PORTD2); // pull-u
 	PORTC &= ~((1 << PORTC0) | (1 << PORTC1));
 	
 }
@@ -60,64 +61,6 @@ void i2c_init(void)
 	TWCR0 = (1<<TWEN);     // enable TWI
 }
 
-void SPI0_MasterInit(void) {
-    DDRB |= (1<<DDB3) | (1<<DDB5);  // MOSI, SCK output
-    DDRB &= ~(1<<DDB4);              // MISO input
-    SPCR0 = (1<<SPE) | (1<<MSTR) | (1<<SPR0); // SPI enable, master, fck/16
-}
-
-uint8_t SPI0_MasterTransmit(uint8_t data) {
-    SPDR0 = data;
-    while (!(SPSR0 & (1<<SPIF)));
-    return SPDR0;
-}
-
-void CS_Enable(void)  { PORTD &= ~(1<<CS_PIN); }
-void CS_Disable(void) { PORTD |= (1<<CS_PIN); }
-uint8_t BMP0_ReadRegister(uint8_t reg) {
-    uint8_t val;
-    CS_Enable();
-    SPI0_MasterTransmit(reg | 0x80);  // MSB=1 read
-    val = SPI0_MasterTransmit(0x00);
-    CS_Disable();
-    return val;
-}
-
-uint16_t BMP0_Read16(uint8_t reg) {
-    uint16_t val = BMP0_ReadRegister(reg);
-    val |= (BMP0_ReadRegister(reg+1) << 8);
-    return val;
-}
-
-int16_t BMP0_ReadS16(uint8_t reg) {
-    return (int16_t)BMP0_Read16(reg);
-}
-
-// Read raw temperature
-int32_t BMP0_ReadTemperatureRaw(void) {
-    uint8_t msb = BMP0_ReadRegister(0xFA);
-    uint8_t lsb = BMP0_ReadRegister(0xFB);
-    uint8_t xlsb = BMP0_ReadRegister(0xFC);
-    return ((int32_t)msb << 12) | ((int32_t)lsb << 4) | ((xlsb >> 4) & 0x0F);
-}
-
-// Compensate temperature
-int32_t BMP0_CompensateTemperature(int32_t adc_T) {
-    int32_t var1, var2, T;
-    var1 = ((((adc_T >> 3) - ((int32_t)dig_T1 <<1))) * ((int32_t)dig_T2)) >> 11;
-    var2 = (((((adc_T >> 4) - ((int32_t)dig_T1)) * ((adc_T >> 4) - ((int32_t)dig_T1))) >> 12) * ((int32_t)dig_T3)) >> 14;
-    t_fine = var1 + var2;
-    T = (t_fine * 5 + 128) >> 8; // °C *100
-    return T;
-}
-
-// Read calibration
-void BMP0_ReadCalibration(void) {
-    dig_T1 = BMP0_Read16(0x88);
-    dig_T2 = BMP0_ReadS16(0x8A);
-    dig_T3 = BMP0_ReadS16(0x8C);
-}
-
 	
 uint16_t ADC_read(uint8_t channel)
 {
@@ -126,6 +69,65 @@ uint16_t ADC_read(uint8_t channel)
     while (ADCSRA & (1 << ADSC));
     return ADC;
 }
+
+uint8_t dht_read_byte(void)
+{
+    uint8_t result = 0;
+    for (uint8_t i = 0; i < 8; i++) {
+        while (!(PIND & (1 << PD2))); // wacht tot hoog
+        _delay_us(30);
+        if (PIND & (1 << PD2)) result |= (1 << (7 - i));
+        while (PIND & (1 << PD2)); // wacht tot laag
+    }
+    return result;
+}
+
+int8_t read_dht11_temperature(void)
+{
+    // Startsignaal: lijn laag voor minstens 18 ms
+    DDRD |= (1 << DDRD2);      // output
+    PORTD &= ~(1 << PORTD2);    // low
+    _delay_ms(20);
+    PORTD |= (1 << PORTD2);     // high
+    _delay_us(30);
+    DDRD &= ~(1 << DDRD2);     // input (sensor mag nu antwoorden)
+
+    // Wacht op sensor: eerst ~80 us low
+    uint16_t timeout = 0;
+    while ((PIND & (1 << PIND2))) {   // wacht tot laag
+        if (++timeout > 10000) return -1;
+    }
+
+    timeout = 0;
+    while (!(PIND & (1 << PIND2))) {  // wacht tot hoog
+        if (++timeout > 10000) return -2;
+    }
+
+    // Nog een low/high sync van de sensor
+    timeout = 0;
+    while ((PIND & (1 << PIND2))) {   // wacht tot laag
+        if (++timeout > 10000) return -3;
+    }
+
+    timeout = 0;
+    while (!(PIND & (1 << PIND2))) {  // wacht tot hoog
+        if (++timeout > 10000) return -4;
+    }
+
+    // Nu komen de 40 bits
+    uint8_t hum_int    = dht_read_byte();
+    uint8_t hum_dec    = dht_read_byte();
+    uint8_t temp_int   = dht_read_byte();
+    uint8_t temp_dec   = dht_read_byte();
+    uint8_t checksum   = dht_read_byte();
+
+    uint8_t sum = hum_int + hum_dec + temp_int + temp_dec;
+    if (sum != checksum) return -5;
+
+    return temp_int;
+}
+
+
 
 void UART_send_char(char c) {
 	while (!(UCSR0A & (1<<UDRE0))); 
@@ -232,6 +234,12 @@ void lcd_clear(void)
     _delay_ms(2);
 }
 
+void UART_send_string(char *s)
+{
+	while (*s) UART_send_char(*s++);
+}
+
+
 int main(void)
 {
 	init_gpio();
@@ -240,28 +248,26 @@ int main(void)
 	init_uart();
 	i2c_init();
     lcd_init();
-	SPI0_MasterInit();
-    _delay_ms(100);
-    /* Replace with your application code */
-    while (1) 
-    { 
-		// BMP280 uitlezen en compensatie toepassen
-        int32_t raw = BMP0_ReadTemperatureRaw();
-        tempC = BMP0_CompensateTemperature(raw) / 100; // nu °C
+	_delay_ms(100);
+	
+	while (1)
+	{
+		int8_t tempC = read_dht11_temperature();
+		char buf[8];
 
-        // LCD update zonder clear
-        lcd_command(0x80);  // cursor naar begin
-        lcd_print("TEMP: ");
-        itoa(tempC, buf, 10);
-        lcd_print(buf);
-        lcd_print("C ");
+		lcd_command(0x80);
+		lcd_print("TEMP: ");
+		itoa(tempC, buf, 10);
+		lcd_print(buf);
+		lcd_print("C ");
 
-        // LEDs via ADC
-        OCR0A = ADC_read(0) >> 2;
-        OCR0B = ADC_read(1) >> 2;
 
-        _delay_ms(500);
 
+		OCR0A = ADC_read(0) >> 2;
+		OCR0B = ADC_read(1) >> 2;
+
+		_delay_ms(200);
 	}
+
 }
 
