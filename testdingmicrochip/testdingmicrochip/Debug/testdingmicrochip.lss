@@ -3,29 +3,29 @@ testdingmicrochip.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .data         00000000  00800100  00800100  000001f4  2**0
+  0 .data         00000000  00800100  00800100  00000204  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  1 .text         000001a0  00000000  00000000  00000054  2**1
+  1 .text         000001b0  00000000  00000000  00000054  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  2 .comment      00000030  00000000  00000000  000001f4  2**0
+  2 .comment      00000030  00000000  00000000  00000204  2**0
                   CONTENTS, READONLY
-  3 .note.gnu.avr.deviceinfo 00000040  00000000  00000000  00000224  2**2
+  3 .note.gnu.avr.deviceinfo 00000040  00000000  00000000  00000234  2**2
                   CONTENTS, READONLY
-  4 .debug_aranges 00000058  00000000  00000000  00000264  2**0
+  4 .debug_aranges 00000058  00000000  00000000  00000274  2**0
                   CONTENTS, READONLY, DEBUGGING
-  5 .debug_info   00000c08  00000000  00000000  000002bc  2**0
+  5 .debug_info   00000c25  00000000  00000000  000002cc  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_abbrev 00000a7f  00000000  00000000  00000ec4  2**0
+  6 .debug_abbrev 00000a7f  00000000  00000000  00000ef1  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_line   0000040f  00000000  00000000  00001943  2**0
+  7 .debug_line   00000413  00000000  00000000  00001970  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_frame  000000b0  00000000  00000000  00001d54  2**2
+  8 .debug_frame  000000b0  00000000  00000000  00001d84  2**2
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_str    00000527  00000000  00000000  00001e04  2**0
+  9 .debug_str    00000527  00000000  00000000  00001e34  2**0
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_loc    000000c1  00000000  00000000  0000232b  2**0
+ 10 .debug_loc    000000c1  00000000  00000000  0000235b  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_ranges 00000048  00000000  00000000  000023ec  2**0
+ 11 .debug_ranges 00000048  00000000  00000000  0000241c  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -84,8 +84,8 @@ Disassembly of section .text:
   ba:	d8 e0       	ldi	r29, 0x08	; 8
   bc:	de bf       	out	0x3e, r29	; 62
   be:	cd bf       	out	0x3d, r28	; 61
-  c0:	0e 94 a5 00 	call	0x14a	; 0x14a <main>
-  c4:	0c 94 ce 00 	jmp	0x19c	; 0x19c <_exit>
+  c0:	0e 94 a8 00 	call	0x150	; 0x150 <main>
+  c4:	0c 94 d6 00 	jmp	0x1ac	; 0x1ac <_exit>
 
 000000c8 <__bad_interrupt>:
   c8:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
@@ -112,116 +112,123 @@ Disassembly of section .text:
   e4:	88 b1       	in	r24, 0x08	; 8
   e6:	8c 7f       	andi	r24, 0xFC	; 252
   e8:	88 b9       	out	0x08, r24	; 8
-  ea:	24 b1       	in	r18, 0x04	; 4
-  ec:	81 e0       	ldi	r24, 0x01	; 1
-  ee:	90 e0       	ldi	r25, 0x00	; 0
-  f0:	02 c0       	rjmp	.+4      	; 0xf6 <init_gpio+0x2a>
-  f2:	88 0f       	add	r24, r24
-  f4:	99 1f       	adc	r25, r25
-  f6:	2a 95       	dec	r18
-  f8:	e2 f7       	brpl	.-8      	; 0xf2 <init_gpio+0x26>
-  fa:	85 60       	ori	r24, 0x05	; 5
-  fc:	94 b1       	in	r25, 0x04	; 4
-  fe:	89 2b       	or	r24, r25
- 100:	84 b9       	out	0x04, r24	; 4
- 102:	81 e5       	ldi	r24, 0x51	; 81
- 104:	8c bd       	out	0x2c, r24	; 44
- 106:	08 95       	ret
+  ea:	08 95       	ret
 
-00000108 <init_pwm>:
- 108:	83 ea       	ldi	r24, 0xA3	; 163
- 10a:	84 bd       	out	0x24, r24	; 36
- 10c:	83 e0       	ldi	r24, 0x03	; 3
- 10e:	85 bd       	out	0x25, r24	; 37
- 110:	08 95       	ret
+000000ec <init_pwm>:
+  ec:	83 ea       	ldi	r24, 0xA3	; 163
+  ee:	84 bd       	out	0x24, r24	; 36
+  f0:	83 e0       	ldi	r24, 0x03	; 3
+  f2:	85 bd       	out	0x25, r24	; 37
+  f4:	08 95       	ret
 
-00000112 <ADC_init>:
- 112:	80 e4       	ldi	r24, 0x40	; 64
- 114:	80 93 7c 00 	sts	0x007C, r24	; 0x80007c <__TEXT_REGION_LENGTH__+0x7f807c>
- 118:	87 e8       	ldi	r24, 0x87	; 135
- 11a:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7f807a>
- 11e:	08 95       	ret
+000000f6 <ADC_init>:
+  f6:	80 e4       	ldi	r24, 0x40	; 64
+  f8:	80 93 7c 00 	sts	0x007C, r24	; 0x80007c <__TEXT_REGION_LENGTH__+0x7f807c>
+  fc:	87 e8       	ldi	r24, 0x87	; 135
+  fe:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7f807a>
+ 102:	08 95       	ret
 
-00000120 <ADC_read>:
- 120:	ec e7       	ldi	r30, 0x7C	; 124
- 122:	f0 e0       	ldi	r31, 0x00	; 0
- 124:	90 81       	ld	r25, Z
- 126:	90 7f       	andi	r25, 0xF0	; 240
- 128:	8f 70       	andi	r24, 0x0F	; 15
- 12a:	89 2b       	or	r24, r25
- 12c:	80 83       	st	Z, r24
- 12e:	ea e7       	ldi	r30, 0x7A	; 122
- 130:	f0 e0       	ldi	r31, 0x00	; 0
- 132:	80 81       	ld	r24, Z
- 134:	80 64       	ori	r24, 0x40	; 64
- 136:	80 83       	st	Z, r24
- 138:	80 91 7a 00 	lds	r24, 0x007A	; 0x80007a <__TEXT_REGION_LENGTH__+0x7f807a>
- 13c:	86 fd       	sbrc	r24, 6
- 13e:	fc cf       	rjmp	.-8      	; 0x138 <ADC_read+0x18>
- 140:	80 91 78 00 	lds	r24, 0x0078	; 0x800078 <__TEXT_REGION_LENGTH__+0x7f8078>
- 144:	90 91 79 00 	lds	r25, 0x0079	; 0x800079 <__TEXT_REGION_LENGTH__+0x7f8079>
- 148:	08 95       	ret
+00000104 <init_uart>:
+ 104:	87 e6       	ldi	r24, 0x67	; 103
+ 106:	90 e0       	ldi	r25, 0x00	; 0
+ 108:	90 93 c5 00 	sts	0x00C5, r25	; 0x8000c5 <__TEXT_REGION_LENGTH__+0x7f80c5>
+ 10c:	80 93 c4 00 	sts	0x00C4, r24	; 0x8000c4 <__TEXT_REGION_LENGTH__+0x7f80c4>
+ 110:	88 e9       	ldi	r24, 0x98	; 152
+ 112:	80 93 c1 00 	sts	0x00C1, r24	; 0x8000c1 <__TEXT_REGION_LENGTH__+0x7f80c1>
+ 116:	08 95       	ret
 
-0000014a <main>:
+00000118 <ADC_read>:
+ 118:	ec e7       	ldi	r30, 0x7C	; 124
+ 11a:	f0 e0       	ldi	r31, 0x00	; 0
+ 11c:	90 81       	ld	r25, Z
+ 11e:	90 7f       	andi	r25, 0xF0	; 240
+ 120:	8f 70       	andi	r24, 0x0F	; 15
+ 122:	89 2b       	or	r24, r25
+ 124:	80 83       	st	Z, r24
+ 126:	ea e7       	ldi	r30, 0x7A	; 122
+ 128:	f0 e0       	ldi	r31, 0x00	; 0
+ 12a:	80 81       	ld	r24, Z
+ 12c:	80 64       	ori	r24, 0x40	; 64
+ 12e:	80 83       	st	Z, r24
+ 130:	80 91 7a 00 	lds	r24, 0x007A	; 0x80007a <__TEXT_REGION_LENGTH__+0x7f807a>
+ 134:	86 fd       	sbrc	r24, 6
+ 136:	fc cf       	rjmp	.-8      	; 0x130 <ADC_read+0x18>
+ 138:	80 91 78 00 	lds	r24, 0x0078	; 0x800078 <__TEXT_REGION_LENGTH__+0x7f8078>
+ 13c:	90 91 79 00 	lds	r25, 0x0079	; 0x800079 <__TEXT_REGION_LENGTH__+0x7f8079>
+ 140:	08 95       	ret
+
+00000142 <UART_send_char>:
+ 142:	90 91 c0 00 	lds	r25, 0x00C0	; 0x8000c0 <__TEXT_REGION_LENGTH__+0x7f80c0>
+ 146:	95 ff       	sbrs	r25, 5
+ 148:	fc cf       	rjmp	.-8      	; 0x142 <UART_send_char>
+ 14a:	80 93 c6 00 	sts	0x00C6, r24	; 0x8000c6 <__TEXT_REGION_LENGTH__+0x7f80c6>
+ 14e:	08 95       	ret
+
+00000150 <main>:
 
 
 
 int main(void)
 {
 	init_gpio();
- 14a:	0e 94 66 00 	call	0xcc	; 0xcc <init_gpio>
+ 150:	0e 94 66 00 	call	0xcc	; 0xcc <init_gpio>
 	init_pwm();
- 14e:	0e 94 84 00 	call	0x108	; 0x108 <init_pwm>
+ 154:	0e 94 76 00 	call	0xec	; 0xec <init_pwm>
 	ADC_init();
- 152:	0e 94 89 00 	call	0x112	; 0x112 <ADC_init>
+ 158:	0e 94 7b 00 	call	0xf6	; 0xf6 <ADC_init>
+	init_uart();
+ 15c:	0e 94 82 00 	call	0x104	; 0x104 <init_uart>
 	#else
 		//round up by default
 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
 	#endif
 
 	__builtin_avr_delay_cycles(__ticks_dc);
- 156:	2f ef       	ldi	r18, 0xFF	; 255
- 158:	81 ee       	ldi	r24, 0xE1	; 225
- 15a:	94 e0       	ldi	r25, 0x04	; 4
- 15c:	21 50       	subi	r18, 0x01	; 1
- 15e:	80 40       	sbci	r24, 0x00	; 0
- 160:	90 40       	sbci	r25, 0x00	; 0
- 162:	e1 f7       	brne	.-8      	; 0x15c <main+0x12>
- 164:	00 c0       	rjmp	.+0      	; 0x166 <main+0x1c>
- 166:	00 00       	nop
+ 160:	2f ef       	ldi	r18, 0xFF	; 255
+ 162:	81 ee       	ldi	r24, 0xE1	; 225
+ 164:	94 e0       	ldi	r25, 0x04	; 4
+ 166:	21 50       	subi	r18, 0x01	; 1
+ 168:	80 40       	sbci	r24, 0x00	; 0
+ 16a:	90 40       	sbci	r25, 0x00	; 0
+ 16c:	e1 f7       	brne	.-8      	; 0x166 <main+0x16>
+ 16e:	00 c0       	rjmp	.+0      	; 0x170 <main+0x20>
+ 170:	00 00       	nop
     _delay_ms(100);
     /* Replace with your application code */
     while (1) 
-    {
+    { 
+		UART_send_char('i');
+ 172:	89 e6       	ldi	r24, 0x69	; 105
+ 174:	0e 94 a1 00 	call	0x142	; 0x142 <UART_send_char>
 		OCR0A = ADC_read(0) >> 2;
- 168:	80 e0       	ldi	r24, 0x00	; 0
- 16a:	0e 94 90 00 	call	0x120	; 0x120 <ADC_read>
- 16e:	96 95       	lsr	r25
- 170:	87 95       	ror	r24
- 172:	96 95       	lsr	r25
- 174:	87 95       	ror	r24
- 176:	87 bd       	out	0x27, r24	; 39
-		OCR0B = ADC_read(1) >> 2;
- 178:	81 e0       	ldi	r24, 0x01	; 1
- 17a:	0e 94 90 00 	call	0x120	; 0x120 <ADC_read>
+ 178:	80 e0       	ldi	r24, 0x00	; 0
+ 17a:	0e 94 8c 00 	call	0x118	; 0x118 <ADC_read>
  17e:	96 95       	lsr	r25
  180:	87 95       	ror	r24
  182:	96 95       	lsr	r25
  184:	87 95       	ror	r24
- 186:	88 bd       	out	0x28, r24	; 40
- 188:	2f ef       	ldi	r18, 0xFF	; 255
- 18a:	83 ec       	ldi	r24, 0xC3	; 195
- 18c:	99 e0       	ldi	r25, 0x09	; 9
- 18e:	21 50       	subi	r18, 0x01	; 1
- 190:	80 40       	sbci	r24, 0x00	; 0
- 192:	90 40       	sbci	r25, 0x00	; 0
- 194:	e1 f7       	brne	.-8      	; 0x18e <main+0x44>
- 196:	00 c0       	rjmp	.+0      	; 0x198 <main+0x4e>
- 198:	00 00       	nop
- 19a:	e6 cf       	rjmp	.-52     	; 0x168 <main+0x1e>
+ 186:	87 bd       	out	0x27, r24	; 39
+		OCR0B = ADC_read(1) >> 2;
+ 188:	81 e0       	ldi	r24, 0x01	; 1
+ 18a:	0e 94 8c 00 	call	0x118	; 0x118 <ADC_read>
+ 18e:	96 95       	lsr	r25
+ 190:	87 95       	ror	r24
+ 192:	96 95       	lsr	r25
+ 194:	87 95       	ror	r24
+ 196:	88 bd       	out	0x28, r24	; 40
+ 198:	2f ef       	ldi	r18, 0xFF	; 255
+ 19a:	83 ec       	ldi	r24, 0xC3	; 195
+ 19c:	99 e0       	ldi	r25, 0x09	; 9
+ 19e:	21 50       	subi	r18, 0x01	; 1
+ 1a0:	80 40       	sbci	r24, 0x00	; 0
+ 1a2:	90 40       	sbci	r25, 0x00	; 0
+ 1a4:	e1 f7       	brne	.-8      	; 0x19e <main+0x4e>
+ 1a6:	00 c0       	rjmp	.+0      	; 0x1a8 <main+0x58>
+ 1a8:	00 00       	nop
+ 1aa:	e3 cf       	rjmp	.-58     	; 0x172 <main+0x22>
 
-0000019c <_exit>:
- 19c:	f8 94       	cli
+000001ac <_exit>:
+ 1ac:	f8 94       	cli
 
-0000019e <__stop_program>:
- 19e:	ff cf       	rjmp	.-2      	; 0x19e <__stop_program>
+000001ae <__stop_program>:
+ 1ae:	ff cf       	rjmp	.-2      	; 0x1ae <__stop_program>

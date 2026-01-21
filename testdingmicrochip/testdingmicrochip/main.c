@@ -19,8 +19,6 @@ void init_gpio()
 	DDRD |= (1<<DDRD5) | (1<<DDRD6);// licht op D5 is blauw en D6 rood
 	DDRD &= ~(1<<DDRD2); //knop
 	PORTC &= ~((1 << PORTC0) | (1 << PORTC1));
-	DDRB |= (1<<DDRB0)|(1<<DDRB)|(1<<DDRB2); // spi
-	SPCR0 = (1<<SPE)|(1<<MSTR)|(1<<SPR0);
 	
 }
 void init_pwm()
@@ -73,10 +71,12 @@ int main(void)
 	init_gpio();
 	init_pwm();
 	ADC_init();
+	init_uart();
     _delay_ms(100);
     /* Replace with your application code */
     while (1) 
-    {
+    { 
+		UART_send_char('i');
 		OCR0A = ADC_read(0) >> 2;
 		OCR0B = ADC_read(1) >> 2;
 		_delay_ms(200);
