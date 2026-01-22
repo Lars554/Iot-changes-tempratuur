@@ -272,7 +272,7 @@ int main(void)
 			lcd_print("C ");
 			UART_send_number(tempC);
         } else {
-            // Analoge sensor uitlezen en omzetten naar °C
+            // Analoge sensor uitlezen en omzetten naar Â°C
 			char buf[8];
             uint16_t adc = ADC_read(0);
             float Vref = 5.0;
