@@ -22,14 +22,15 @@
 #define LCD_EN 0x04
 #define LCD_BL 0x08
 
-char togel = '0';
+char togel = '1';
 
 void init_gpio()
 {
 	DDRC &= ~(1<<DDRC0); //potentie meter voor tempratuur te zetten op pc0
 	DDRC &= ~(1<<DDRC1); //potentiemeter als sensor op pc1
 	DDRD |= (1<<DDRD5) | (1<<DDRD6);// licht op D5 is blauw en D6 rood
-	DDRD &= ~(1<<DDRD2); // input
+	DDRD &= ~(1<<DDRD2); // input van temp sensor D2
+	DDRD &= ~(1<<DDRD4); // input van de knop op D4
 	PORTD |= (1 << PORTD2);
 	PORTC &= ~((1 << PORTC0) | (1 << PORTC1));
 	
