@@ -2,16 +2,18 @@ import serial
 import json
 import os
 import time
+import re
 from datetime import datetime
 
 SERIAL_PORT = "/dev/ttyACM0"
 BAUDRATE = 9600
-DB_FILE = "adc_database.json"
+DB_FILE = os.path.join(os.path.expanduser("~"), "adc_database.json")
+MAX_ENTRIES = 30  # maximaal 30 metingen bewaren
 
 # Seriële poort openen
 try:
     ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=1)
-    time.sleep(2)  # Arduino reset-tijd
+    time.sleep(2)
 except serial.SerialException as e:
     print("Kan seriële poort niet openen:", e)
     exit(1)
@@ -22,35 +24,46 @@ if not os.path.exists(DB_FILE):
         json.dump([], f)
 
 print("UART lezen gestart...")
+print("JSON bestand:", DB_FILE)
 
 while True:
     try:
         line = ser.readline().decode("utf-8", errors="ignore").strip()
-
         if not line:
-            continue  # lege regels negeren
+            continue
 
-        # Probeer 1 getal te lezen
-        value = int(line)
+        print("RAW ontvangen:", repr(line))
+
+        match = re.search(r"-?\d+", line)
+        if not match:
+            continue
+
+        value = int(match.group())
 
         entry = {
             "Tijd": datetime.now().isoformat(),
             "Graden C°": value
         }
 
-        with open(DB_FILE, "r") as f:
-            data = json.load(f)
+        # JSON veilig laden
+        try:
+            with open(DB_FILE, "r") as f:
+                data = json.load(f)
+            if not isinstance(data, list):
+                data = []
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = []
 
         data.append(entry)
+
+        # ❗ alleen de laatste 10 bewaren
+        if len(data) > MAX_ENTRIES:
+            data = data[-MAX_ENTRIES:]
 
         with open(DB_FILE, "w") as f:
             json.dump(data, f, indent=2)
 
-        print("Opgeslagen:", entry)
-
-    except ValueError:
-        # Geen geldig getal ontvangen
-        print("Ongeldige data:", line)
+        print(f"Opgeslagen ({len(data)}/{MAX_ENTRIES}):", entry)
 
     except serial.SerialException as e:
         print("Seriële verbinding verbroken:", e)
